@@ -34,7 +34,7 @@ def store_user_data(user_data):
 
 
 def fetch_profile(url):
-    headers = {'User-agent': 'Mozilla/5.0'}
+    headers = {'User-agent': 'Mozilla/5.0 ()'}
     r = requests.get(url, headers=headers)
     data = parse_page(r)
     # store data
@@ -51,7 +51,7 @@ def cleanhtml(raw_html):
 
 def parse_page(page):
     data = {}
-    # print page.content
+    print page.content
     root = html.fromstring(page.content)
     # name
     e = root.find(".//h1[@id='name']")
@@ -78,16 +78,17 @@ class list_users:
 
 class get_user:
     def GET(self, user):
-        return 'get_user'
+        user = filter(lambda x: 'name' in x and x['name'] == user, get_users_data())
+        if user is not None:
+            return user
+        return 'User not found!'
 
+    class get_profile:
+        def GET(self, url):
+            print 'URL: %s' % url
 
-class get_profile:
-    def GET(self, url):
-        print 'URL: %s' % url
-
-
-if __name__ == "__main__":
-    # store_user_data({'name': 'tomer1'})
-    # store_user_data({'name': 'tomer2'})
-    # app.run()
-    fetch_profile('https://il.linkedin.com/in/fridtom')
+    if __name__ == "__main__":
+        store_user_data({'name': 'tomer1'})
+        store_user_data({'name': 'tomer2'})
+        app.run()
+        # fetch_profile('https://il.linkedin.com/in/fridtom')
