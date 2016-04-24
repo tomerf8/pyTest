@@ -3,11 +3,13 @@ from lxml import html, etree
 import re
 import web
 import shelve
+from collections import Counter
 
 urls = (
     '/profile/(.+)', 'get_profile',
     '/users', 'list_users',
-    '/users/(.*)', 'get_user'
+    '/users/(.*)', 'get_user',
+    '/skills', 'get_skills'
 )
 
 app = web.application(urls, globals())
@@ -30,6 +32,30 @@ def store_user_data(user_data):
         db['users'] = temp
     else:
         db['users'] = [user_data]
+    db.close()
+    return store_top_skills(user_data['skills'])
+
+
+def get_top_skills():
+    db = shelve.open('data.db')
+    data = []
+    if db.has_key('skills'):
+        data = db['skills']
+    db.close()
+    return data
+
+
+def store_top_skills(skills):
+    db = shelve.open('data.db')
+    skill_count = Counter(list(skills))
+
+    if db.has_key('skills'):
+        temp_counter = Counter(list(db['skills']))
+        temp_counter = temp_counter + skill_count
+        print temp_counter
+        db['skills'] = dict(temp_counter)
+    else:
+        db['skills'] = dict(skill_count)
     db.close()
 
 
@@ -71,6 +97,11 @@ def parse_page(page):
     return data
 
 
+def inject_mock_data():
+    store_user_data({'name': 'tomer1', 'skills': ['Java', 'Python']})
+    store_user_data({'name': 'tomer2', 'skills': ['Java', 'Perl']})
+
+
 class list_users:
     def GET(self):
         return get_users_data()
@@ -83,12 +114,18 @@ class get_user:
             return user
         return 'User not found!'
 
-    class get_profile:
-        def GET(self, url):
-            print 'URL: %s' % url
 
-    if __name__ == "__main__":
-        store_user_data({'name': 'tomer1'})
-        store_user_data({'name': 'tomer2'})
-        app.run()
-        # fetch_profile('https://il.linkedin.com/in/fridtom')
+class get_profile:
+    def GET(self, url):
+        return fetch_profile(url)
+
+
+class get_skills:
+    def GET(self):
+        return get_top_skills()
+
+
+if __name__ == "__main__":
+    inject_mock_data()
+    # fetch_profile('https://il.linkedin.com/in/fridtom')
+    app.run()
